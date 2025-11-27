@@ -116,8 +116,9 @@ class EvolutionRepository:
             "footer": "Clique no link acima ⬆️",
             "buttons": [
                 {
-                    "title": button_text[:20],  # Máximo 20 caracteres
+                    "type": "reply",
                     "displayText": button_text[:20],
+                    "text": button_text[:20],  # Campo obrigatório
                     "id": "btn_1"
                 }
             ]
