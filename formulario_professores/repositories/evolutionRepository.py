@@ -97,33 +97,27 @@ class EvolutionRepository:
     @staticmethod
     def enviar_mensagem_com_botao(host: str, api_key: str, instance_name: str, number: str, text: str, button_text: str, button_url: str) -> Dict[str, Any]:
         """
-        Envia uma mensagem com link e botão de resposta rápida.
+        Envia uma mensagem com link formatado.
         
-        IMPORTANTE: Evolution API v2 não suporta botões de URL nativos (clickable URLs in buttons).
-        A solução é enviar:
-        1. Texto da mensagem com o link clicável inline
-        2. Botão de resposta rápida decorativo
+        IMPORTANTE: Evolution API v2 com Baileys NÃO suporta sendButtons.
+        Erro da API: "Method not available on WhatsApp Baileys"
         
-        O usuário pode clicar diretamente no link na mensagem.
+        Solução: Enviar mensagem de texto formatada com link clicável.
+        O WhatsApp detecta automaticamente URLs e as torna clicáveis.
         """
-        # Formata a mensagem com link clicável
-        mensagem_completa = f"{text}\n\n🔗 {button_text}: {button_url}"
+        # Formata a mensagem com link clicável e emojis para destaque visual
+        mensagem_formatada = f"""📩 *Mensagem Importante*
+
+{text}
+
+🔗 *{button_text}*
+👉 {button_url}
+
+_Clique no link acima para acessar_"""
         
-        payload = {
-            "number": number,
-            "title": "📩 Mensagem Importante",
-            "description": mensagem_completa,
-            "footer": "Clique no link acima ⬆️",
-            "buttons": [
-                {
-                    "type": "reply",
-                    "displayText": button_text[:20],
-                    "text": button_text[:20],  # Campo obrigatório
-                    "id": "btn_1"
-                }
-            ]
-        }
-        return EvolutionRepository._make_request("POST", host, api_key, f"message/sendButtons/{instance_name}", json=payload)
+        # Usa o endpoint de texto simples que funciona 100% no Baileys
+        payload = {"number": number, "text": mensagem_formatada}
+        return EvolutionRepository._make_request("POST", host, api_key, f"message/sendText/{instance_name}", json=payload)
 
  # --- NOVAS FUNÇÕES PARA GRUPOS ---
     @staticmethod

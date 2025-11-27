@@ -74,45 +74,37 @@ git push origin master
    - **URL do Botão**: Ex: "https://seusite.com"
 4. Agende normalmente
 
-### 2. Formato do Botão WhatsApp
-⚠️ **IMPORTANTE**: Evolution API v2 não suporta botões de URL clicáveis nativamente.
+### 2. Formato da Mensagem com Link
+⚠️ **REALIDADE**: Evolution API v2.1.1 com Baileys **NÃO suporta botões** (erro: "Method not available on WhatsApp Baileys")
 
-A mensagem será enviada no formato:
+A mensagem será enviada formatada com link clicável:
 ```
-┌───────────────────────────┐
-│ 📩 Mensagem Importante     │ ← Título
-├───────────────────────────┤
-│ [Sua mensagem aqui]       │
-│                            │
-│ 🔗 Acesse Nossa Página:    │
-│ https://seusite.com       │ ← Link CLICÁVEL
-├───────────────────────────┤
-│ Clique no link acima ⬆️    │ ← Rodapé
-├───────────────────────────┤
-│ [ Acesse Nossa Pá... ]    │ ← Botão decorativo
-└───────────────────────────┘
+📩 *Mensagem Importante*
+
+[Sua mensagem aqui]
+
+🔗 *Acesse Nossa Página*
+👉 https://seusite.com
+
+_Clique no link acima para acessar_
 ```
 
-O usuário pode:
-1. **Clicar no link** diretamente na mensagem (vai abrir o navegador)
-2. **Clicar no botão** decorativo (apenas responde à mensagem)
+✅ **Vantagens desta solução**:
+- Link 100% clicável (WhatsApp detecta URLs automaticamente)
+- Formatação Markdown (*negrito*, _itálico_)
+- Emojis para destaque visual
+- Funciona em TODOS os tipos de chat (individual e grupos)
+- Compatível com todas as versões do WhatsApp
 
 ### 3. Exemplo de Payload Evolution API
 ```json
 {
   "number": "+5511988887777",
-  "title": "📩 Mensagem Importante",
-  "description": "Olá! Confira nossa promoção especial\n\n🔗 Ver Promoção: https://suaempresa.com/promo",
-  "footer": "Clique no link acima ⬆️",
-  "buttons": [
-    {
-      "title": "Ver Promoção",
-      "displayText": "Ver Promoção",
-      "id": "btn_1"
-    }
-  ]
+  "text": "📩 *Mensagem Importante*\n\nOlá! Confira nossa promoção especial\n\n🔗 *Ver Promoção*\n👉 https://suaempresa.com/promo\n\n_Clique no link acima para acessar_"
 }
 ```
+
+**Endpoint usado**: `POST /message/sendText/{instance}` (100% confiável)
 
 ## Verificação Pós-Deploy
 
@@ -176,26 +168,28 @@ python manage.py migrate formulario_professores 0024
 
 ## Limitações Conhecidas
 
-1. **Evolution API v2 não suporta botões de URL clicáveis** nativamente
-   - Solução implementada: Link clicável no corpo da mensagem + botão decorativo
-2. **Máximo 3 botões por mensagem** (Evolution API v2)
-3. **Botões funcionam apenas em chats individuais** (não em grupos - limitação WhatsApp)
-4. **Texto do botão: máximo 20 caracteres** (limitação Evolution API)
-5. **URL deve ser HTTPS** (segurança WhatsApp)
+1. **Evolution API v2.1.1 com Baileys NÃO suporta botões interativos**
+   - Erro: "Method not available on WhatsApp Baileys"
+   - Solução implementada: Mensagem de texto formatada com link clicável ✅
+2. **Links funcionam perfeitamente** - WhatsApp detecta e formata URLs automaticamente
+3. **Funciona em chats individuais E grupos** (vantagem sobre botões)
+4. **Formatação Markdown suportada**: *negrito*, _itálico_, ~riscado~, ```monospace```
 
-## Por que não usar botões de URL diretos?
+## Por que não usar botões?
 
-A Evolution API v2.1.1 usa a biblioteca Baileys, que **não implementa botões de URL clicáveis**.
+**Resposta da Evolution API**: `"Method not available on WhatsApp Baileys"`
 
-**Opções disponíveis**:
-- ✅ **Reply Buttons** (botões de resposta rápida) - Implementado
-- ✅ **List Messages** (listas interativas) - Disponível na API
-- ❌ **URL Buttons** (botões com links clicáveis) - Não suportado no Baileys
+A biblioteca **Baileys** (usada pela Evolution API v2) **não implementa** os seguintes recursos:
+- ❌ **sendButtons** - Botões de resposta rápida
+- ❌ **sendList** - Listas interativas  
+- ❌ **URL Buttons** - Botões com links clicáveis
 
-**Nossa solução**:
-- Link clicável direto na mensagem (funciona 100%)
-- Botão decorativo para destacar visualmente
-- Melhor UX: usuário clica no link, não no botão
+**Nossa solução (melhor prática)**:
+- ✅ Mensagem de texto formatada com Markdown
+- ✅ Link clicável automático (WhatsApp detecta URLs)
+- ✅ Emojis para destaque visual (📩 🔗 👉)
+- ✅ Funciona 100% em todas as versões do WhatsApp
+- ✅ Compatível com grupos e chats individuais
 
 ## Próximos Passos (Opcional)
 
