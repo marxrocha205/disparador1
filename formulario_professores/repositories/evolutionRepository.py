@@ -96,15 +96,29 @@ class EvolutionRepository:
 
     @staticmethod
     def enviar_mensagem_com_botao(host: str, api_key: str, instance_name: str, number: str, text: str, button_text: str, button_url: str) -> Dict[str, Any]:
-        """Envia uma mensagem de texto com botão de URL."""
+        """
+        Envia uma mensagem com link e botão de resposta rápida.
+        
+        IMPORTANTE: Evolution API v2 não suporta botões de URL nativos (clickable URLs in buttons).
+        A solução é enviar:
+        1. Texto da mensagem com o link clicável inline
+        2. Botão de resposta rápida decorativo
+        
+        O usuário pode clicar diretamente no link na mensagem.
+        """
+        # Formata a mensagem com link clicável
+        mensagem_completa = f"{text}\n\n🔗 {button_text}: {button_url}"
+        
         payload = {
             "number": number,
-            "message": text,
+            "title": "📩 Mensagem Importante",
+            "description": mensagem_completa,
+            "footer": "Clique no link acima ⬆️",
             "buttons": [
                 {
-                    "type": "url",
-                    "displayText": button_text,
-                    "url": button_url
+                    "title": button_text[:20],  # Máximo 20 caracteres
+                    "displayText": button_text[:20],
+                    "id": "btn_1"
                 }
             ]
         }

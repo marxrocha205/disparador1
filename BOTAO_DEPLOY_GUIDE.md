@@ -75,25 +75,40 @@ git push origin master
 4. Agende normalmente
 
 ### 2. Formato do Botão WhatsApp
-A mensagem será enviada com:
-```
-[Sua mensagem de texto aqui]
+⚠️ **IMPORTANTE**: Evolution API v2 não suporta botões de URL clicáveis nativamente.
 
-┌───────────────────┐
-│ 🔗 Acesse Nossa Página │  ← Botão clicável
-└───────────────────┘
+A mensagem será enviada no formato:
 ```
+┌───────────────────────────┐
+│ 📩 Mensagem Importante     │ ← Título
+├───────────────────────────┤
+│ [Sua mensagem aqui]       │
+│                            │
+│ 🔗 Acesse Nossa Página:    │
+│ https://seusite.com       │ ← Link CLICÁVEL
+├───────────────────────────┤
+│ Clique no link acima ⬆️    │ ← Rodapé
+├───────────────────────────┤
+│ [ Acesse Nossa Pá... ]    │ ← Botão decorativo
+└───────────────────────────┘
+```
+
+O usuário pode:
+1. **Clicar no link** diretamente na mensagem (vai abrir o navegador)
+2. **Clicar no botão** decorativo (apenas responde à mensagem)
 
 ### 3. Exemplo de Payload Evolution API
 ```json
 {
   "number": "+5511988887777",
-  "message": "Olá! Confira nossa promoção especial",
+  "title": "📩 Mensagem Importante",
+  "description": "Olá! Confira nossa promoção especial\n\n🔗 Ver Promoção: https://suaempresa.com/promo",
+  "footer": "Clique no link acima ⬆️",
   "buttons": [
     {
-      "type": "url",
+      "title": "Ver Promoção",
       "displayText": "Ver Promoção",
-      "url": "https://suaempresa.com/promo"
+      "id": "btn_1"
     }
   ]
 }
@@ -161,10 +176,26 @@ python manage.py migrate formulario_professores 0024
 
 ## Limitações Conhecidas
 
-1. **Máximo 3 botões por mensagem** (Evolution API v2)
-2. **Botões URL não funcionam em grupos** (limitação WhatsApp)
-3. **Texto do botão: máximo 20-25 caracteres** (recomendação WhatsApp)
-4. **URL deve ser HTTPS** (segurança WhatsApp)
+1. **Evolution API v2 não suporta botões de URL clicáveis** nativamente
+   - Solução implementada: Link clicável no corpo da mensagem + botão decorativo
+2. **Máximo 3 botões por mensagem** (Evolution API v2)
+3. **Botões funcionam apenas em chats individuais** (não em grupos - limitação WhatsApp)
+4. **Texto do botão: máximo 20 caracteres** (limitação Evolution API)
+5. **URL deve ser HTTPS** (segurança WhatsApp)
+
+## Por que não usar botões de URL diretos?
+
+A Evolution API v2.1.1 usa a biblioteca Baileys, que **não implementa botões de URL clicáveis**.
+
+**Opções disponíveis**:
+- ✅ **Reply Buttons** (botões de resposta rápida) - Implementado
+- ✅ **List Messages** (listas interativas) - Disponível na API
+- ❌ **URL Buttons** (botões com links clicáveis) - Não suportado no Baileys
+
+**Nossa solução**:
+- Link clicável direto na mensagem (funciona 100%)
+- Botão decorativo para destacar visualmente
+- Melhor UX: usuário clica no link, não no botão
 
 ## Próximos Passos (Opcional)
 
