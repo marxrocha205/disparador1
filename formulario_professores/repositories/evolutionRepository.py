@@ -94,6 +94,21 @@ class EvolutionRepository:
         payload = {"number": number, "audio": audio_data} # Espera a string Base64 pura
         return EvolutionRepository._make_request("POST", host, api_key, f"message/sendWhatsAppAudio/{instance_name}", json=payload)
 
+    @staticmethod
+    def enviar_mensagem_com_botao(host: str, api_key: str, instance_name: str, number: str, text: str, button_text: str, button_url: str) -> Dict[str, Any]:
+        """Envia uma mensagem de texto com botão de URL."""
+        payload = {
+            "number": number,
+            "message": text,
+            "buttons": [
+                {
+                    "type": "url",
+                    "displayText": button_text,
+                    "url": button_url
+                }
+            ]
+        }
+        return EvolutionRepository._make_request("POST", host, api_key, f"message/sendButtons/{instance_name}", json=payload)
 
  # --- NOVAS FUNÇÕES PARA GRUPOS ---
     @staticmethod

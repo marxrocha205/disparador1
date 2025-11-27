@@ -57,6 +57,31 @@ def enviar_notificacao_whatsapp_texto(self, contato, mensagem_texto, usuario_id,
 
 
 @shared_task(bind=True, max_retries=3, default_retry_delay=60)
+def enviar_notificacao_whatsapp_botao(self, contato, mensagem_texto, botao_texto, botao_url, usuario_id, envio_log_id):
+    """Tarefa Celery para enviar uma mensagem de texto com botão URL."""
+    logger.info(f"[EnvioBotao ID: {envio_log_id}] Iniciando para {contato}, Usuário ID: {usuario_id}")
+    api_settings, instancia = get_api_credentials(usuario_id)
+    if not api_settings:
+        return
+
+    resultado_api = EvolutionRepository.enviar_mensagem_com_botao(
+        api_settings.api_host,
+        api_settings.api_key,
+        instancia.nome_instancia,
+        contato,
+        mensagem_texto,
+        botao_texto,
+        botao_url
+    )
+
+    if "error" in resultado_api or resultado_api.get("status") == "error":
+        error_details = resultado_api.get('message', 'Erro desconhecido')
+        logger.error(f"[EnvioBotao ID: {envio_log_id}] Falha ao enviar para {contato}. Erro: {error_details}")
+    else:
+        logger.info(f"[EnvioBotao ID: {envio_log_id}] Sucesso para {contato}.")
+
+
+@shared_task(bind=True, max_retries=3, default_retry_delay=60)
 def enviar_notificacao_whatsapp_midia(self, contato, midia_id, mensagem_id, usuario_id, envio_log_id):
     """Tarefa Celery para enviar uma mensagem com mídia, com conversão de áudio."""
     logger.info(f"[EnvioMidia ID: {envio_log_id}] Iniciando para {contato}, Usuário ID: {usuario_id}")
@@ -196,10 +221,17 @@ def verificar_disparos(self):
                 enviou_algo = False
 
                 def agendar_envio_texto():
-                    enviar_notificacao_whatsapp_texto.apply_async(
-                        args=[contato, msg.mensagem_notificacao, usuario.id, f"{envio_log_id}-txt"],
-                        countdown=delay
-                    )
+                    # Verifica se deve enviar com botão ou texto simples
+                    if msg.incluir_botao and msg.botao_texto and msg.botao_url:
+                        enviar_notificacao_whatsapp_botao.apply_async(
+                            args=[contato, msg.mensagem_notificacao, msg.botao_texto, msg.botao_url, usuario.id, f"{envio_log_id}-btn"],
+                            countdown=delay
+                        )
+                    else:
+                        enviar_notificacao_whatsapp_texto.apply_async(
+                            args=[contato, msg.mensagem_notificacao, usuario.id, f"{envio_log_id}-txt"],
+                            countdown=delay
+                        )
                     return True
 
                 def agendar_envio_midia():

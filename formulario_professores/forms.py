@@ -74,6 +74,37 @@ class MensagemForm(forms.ModelForm):
 
     contato = forms.JSONField(required=False, widget=forms.HiddenInput())
 
+    incluir_botao = forms.BooleanField(
+        label="Incluir Botão com Link",
+        required=False,
+        widget=forms.CheckboxInput(attrs={
+            'class': 'h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500',
+            'id': 'id_incluir_botao'
+        })
+    )
+    
+    botao_texto = forms.CharField(
+        label="Texto do Botão",
+        max_length=100,
+        required=False,
+        widget=forms.TextInput(attrs={
+            'placeholder': 'Ex: Acesse nossa página',
+            'class': 'w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500',
+            'id': 'id_botao_texto'
+        })
+    )
+    
+    botao_url = forms.URLField(
+        label="URL do Botão",
+        max_length=500,
+        required=False,
+        widget=forms.URLInput(attrs={
+            'placeholder': 'Ex: https://seusite.com',
+            'class': 'w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500',
+            'id': 'id_botao_url'
+        })
+    )
+
     class Meta:
         model = Mensagem
         fields = [
@@ -83,7 +114,10 @@ class MensagemForm(forms.ModelForm):
             'tipo_envio',
             'modo_envio',
             'contato',
-            'dias_disparo' 
+            'dias_disparo',
+            'incluir_botao',
+            'botao_texto',
+            'botao_url'
         ]
         exclude = ['usuario', 'ordem_envio', 'id_campanha']
         widgets = {
@@ -97,7 +131,7 @@ class MensagemForm(forms.ModelForm):
         tailwind_text_input_classes = 'w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
         tailwind_select_classes = tailwind_text_input_classes
         
-        campos_com_widget_ja_estilizado = ['contato_digitado', 'contacts_file', 'dias_disparo', 'horario_disparo', 'contato']
+        campos_com_widget_ja_estilizado = ['contato_digitado', 'contacts_file', 'dias_disparo', 'horario_disparo', 'contato', 'incluir_botao', 'botao_texto', 'botao_url']
         
         for field_name, field in self.fields.items():
             if field_name not in campos_com_widget_ja_estilizado and not field.widget.attrs.get('class'):
@@ -221,6 +255,17 @@ class MensagemForm(forms.ModelForm):
         mensagem_notificacao = cleaned_data.get("mensagem_notificacao")
         if modo_envio == "texto" and not mensagem_notificacao:
             self.add_error('mensagem_notificacao', "A mensagem é obrigatória quando o modo de envio é 'Somente Texto'.")
+        
+        # Validação dos campos de botão
+        incluir_botao = cleaned_data.get('incluir_botao')
+        botao_texto = cleaned_data.get('botao_texto', '').strip()
+        botao_url = cleaned_data.get('botao_url', '').strip()
+        
+        if incluir_botao:
+            if not botao_texto:
+                self.add_error('botao_texto', 'O texto do botão é obrigatório quando "Incluir Botão" está marcado.')
+            if not botao_url:
+                self.add_error('botao_url', 'A URL do botão é obrigatória quando "Incluir Botão" está marcado.')
         
         return cleaned_data
 

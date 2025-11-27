@@ -79,6 +79,11 @@ class Mensagem(models.Model):
         ],
         default="texto"
     )
+    
+    # Campos para botões URL
+    incluir_botao = models.BooleanField(default=False, verbose_name="Incluir Botão com Link")
+    botao_texto = models.CharField(max_length=100, blank=True, null=True, verbose_name="Texto do Botão")
+    botao_url = models.URLField(max_length=500, blank=True, null=True, verbose_name="URL do Botão")
 
     ordem_envio = models.IntegerField(default=0)
     id_campanha = models.UUIDField(default=uuid.uuid4, editable=False, help_text="Loteamento")

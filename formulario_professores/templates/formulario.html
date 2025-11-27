@@ -87,6 +87,25 @@
                         <textarea name="{{ form.mensagem_notificacao.name }}" id="{{ form.mensagem_notificacao.id_for_label }}" rows="5" class="mt-2 w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition">{{ form.mensagem_notificacao.value|default_if_none:'' }}</textarea>
                          {% for error in form.mensagem_notificacao.errors %}<p class="text-red-500 text-sm mt-1">{{ error }}</p>{% endfor %}
                     </div>
+
+                    <div class="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                        <div class="flex items-center mb-4">
+                            <input type="checkbox" name="{{ form.incluir_botao.name }}" id="{{ form.incluir_botao.id_for_label }}" class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" {% if form.incluir_botao.value %}checked{% endif %}>
+                            <label for="{{ form.incluir_botao.id_for_label }}" class="ml-2 text-sm font-semibold text-gray-700">{{ form.incluir_botao.label }}</label>
+                        </div>
+                        <div id="campos_botao" class="space-y-4 hidden">
+                            <div>
+                                <label for="{{ form.botao_texto.id_for_label }}" class="block text-sm font-semibold text-gray-700">{{ form.botao_texto.label }}</label>
+                                <input type="text" name="{{ form.botao_texto.name }}" id="{{ form.botao_texto.id_for_label }}" class="mt-2 w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" value="{{ form.botao_texto.value|default_if_none:'' }}" maxlength="100" placeholder="Ex: Acesse nossa página">
+                                {% for error in form.botao_texto.errors %}<p class="text-red-500 text-sm mt-1">{{ error }}</p>{% endfor %}
+                            </div>
+                            <div>
+                                <label for="{{ form.botao_url.id_for_label }}" class="block text-sm font-semibold text-gray-700">{{ form.botao_url.label }}</label>
+                                <input type="url" name="{{ form.botao_url.name }}" id="{{ form.botao_url.id_for_label }}" class="mt-2 w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" value="{{ form.botao_url.value|default_if_none:'' }}" placeholder="Ex: https://seusite.com">
+                                {% for error in form.botao_url.errors %}<p class="text-red-500 text-sm mt-1">{{ error }}</p>{% endfor %}
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </fieldset>
 
@@ -174,6 +193,24 @@
         if (modoEnvio) {
             modoEnvio.addEventListener("change", atualizarCamposVisiveisModoEnvio);
             atualizarCamposVisiveisModoEnvio(); 
+        }
+
+        // --- Lógica para exibir/ocultar campos de botão ---
+        const incluirBotaoCheckbox = document.getElementById("{{ form.incluir_botao.id_for_label }}");
+        const camposBotao = document.getElementById("campos_botao");
+        
+        function atualizarCamposBotao() {
+            if (!incluirBotaoCheckbox || !camposBotao) return;
+            if (incluirBotaoCheckbox.checked) {
+                camposBotao.classList.remove("hidden");
+            } else {
+                camposBotao.classList.add("hidden");
+            }
+        }
+        
+        if (incluirBotaoCheckbox) {
+            incluirBotaoCheckbox.addEventListener("change", atualizarCamposBotao);
+            atualizarCamposBotao(); // Atualiza no carregamento da página
         }
 
         // --- Lógica para processar lotes ---
