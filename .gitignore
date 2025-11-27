@@ -23,7 +23,8 @@ celerybeat-schedule*
 Thumbs.db
 
 # Env
-
+.env
+.env.local
 
 # Docker
 *.pid

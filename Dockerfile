@@ -42,10 +42,13 @@ COPY . .
 # Executa o collectstatic. Essencial para que o WhiteNoise sirva seus arquivos CSS/JS.
 RUN python manage.py collectstatic --no-input
 
+# Torna o script de inicialização executável
+RUN chmod +x start.sh
+
 # Expõe a porta que o Gunicorn/Django vai usar.
 # O Railway vai fornecer a porta correta através da variável de ambiente $PORT.
 EXPOSE 8000
 
-CMD ["gunicorn", "setup.wsgi:application", "--bind", "0.0.0.0:8000", "-w", "3"]
-# O comando de inicialização (CMD) será definido nas configurações de cada serviço no Railway.
+# Comando que usa a variável $PORT fornecida pelo Railway
+CMD ["./start.sh"]
 # Ex: gunicorn setup.wsgi:application --bind 0.0.0.0:$PORT
