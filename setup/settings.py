@@ -105,7 +105,13 @@ DATABASES = {
 }
 
 # --- CACHE (REDIS) ---
-REDIS_URL = os.getenv('REDIS_URL') or 'redis://localhost:6379'
+REDIS_URL = os.getenv('REDIS_URL')
+if not REDIS_URL:
+    print("[ERROR] REDIS_URL não definida! Usando localhost como fallback.", file=sys.stderr)
+    REDIS_URL = 'redis://localhost:6379'
+else:
+    print(f"[INFO] Usando REDIS_URL do Railway", file=sys.stderr)
+
 CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",
@@ -117,8 +123,8 @@ CACHES = {
 }
 
 # --- CELERY ---
-CELERY_BROKER_URL = f"{REDIS_URL}/0"
-CELERY_RESULT_BACKEND = f"{REDIS_URL}/0"
+CELERY_BROKER_URL = REDIS_URL
+CELERY_RESULT_BACKEND = REDIS_URL
 CELERY_IMPORTS = ('formulario_professores.tasks',)
 CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers.DatabaseScheduler'
 CELERY_BEAT_SCHEDULE = {
