@@ -89,11 +89,18 @@ TEMPLATES = [
 
 # --- BANCO DE DADOS ---
 # Configuração robusta que usa a DATABASE_URL do Railway.
+DATABASE_URL = os.getenv('DATABASE_URL')
+if not DATABASE_URL:
+    print("[ERROR] DATABASE_URL não definida! Usando SQLite como fallback.", file=sys.stderr)
+    DATABASE_URL = f"sqlite:///{BASE_DIR / 'db.sqlite3'}"
+else:
+    print(f"[INFO] Usando DATABASE_URL do Railway", file=sys.stderr)
+
 DATABASES = {
     'default': dj_database_url.config(
+        default=DATABASE_URL,
         conn_max_age=600,
         conn_health_checks=True,
-        default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}"
     )
 }
 

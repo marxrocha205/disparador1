@@ -7,10 +7,6 @@ echo "🚀 Iniciando aplicação Django..."
 echo "📦 Executando migrações..."
 python manage.py migrate --no-input
 
-# Cria superusuário automaticamente se não existir
-echo "👤 Verificando superusuário..."
-python manage.py create_superuser
-
 # Coleta arquivos estáticos (já feito no build, mas garante)
 echo "📁 Verificando arquivos estáticos..."
 python manage.py collectstatic --no-input --clear
