@@ -1,0 +1,254 @@
+{% extends "base.html" %}
+
+{% block titulo %}Extrair Contatos de Grupos{% endblock %}
+
+{% block conteudo %}
+<div class="max-w-3xl mx-auto">
+    <div class="bg-white p-8 rounded-2xl shadow-lg">
+        <div class="text-center">
+            <h1 class="text-3xl font-bold text-gray-800">Exportar Contatos de Grupos</h1>
+            <p class="text-gray-600 mt-2">
+                Clique no botão abaixo para escolher de quais grupos você deseja extrair os contatos.
+            </p>
+        </div>
+        <hr class="my-6">
+
+        {% if not status_conexao %}
+            <div class="flex items-center mb-6 bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg" role="alert">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-3 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                <strong class="font-bold mr-1">Atenção!</strong>
+                <span>Sua instância do WhatsApp não está conectada.</span>
+                <a href="{% url 'evolution_status' %}" class="ml-auto font-semibold underline hover:text-red-900">Conectar agora</a>
+            </div>
+        {% else %}
+            {% csrf_token %} {# Adicionado para o JavaScript pegar o token CSRF #}
+            <button id="openModalButton" class="w-full flex items-center justify-center bg-green-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-green-700 transition duration-300 shadow-sm">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 4h18M3 10h18M3 16h18" /></svg>
+                Selecionar Grupos e Iniciar Extração
+            </button>
+        {% endif %}
+
+        <div id="statusArea" class="mt-6 p-4 bg-gray-50 rounded-xl border border-gray-200 hidden">
+            <p id="statusText" class="text-gray-700 font-medium text-center">Aguardando início...</p>
+            <div class="w-full bg-gray-200 rounded-full h-2.5 mt-2">
+                <div id="progressBar" class="bg-green-600 h-2.5 rounded-full transition-all duration-500" style="width: 0%"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="groupSelectModal" class="fixed inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center p-4 hidden z-50 transition-opacity duration-300">
+    <div class="bg-white w-full max-w-lg rounded-2xl shadow-xl transform transition-all duration-300 scale-95 opacity-0" id="modal-panel">
+        <div class="p-6">
+            <h3 class="text-xl leading-6 font-bold text-gray-900">Selecione os Grupos</h3>
+            <div class="mt-4 p-3 border rounded-lg h-72 overflow-y-auto bg-gray-50">
+                <div id="groupListContainer" class="text-left">
+                    <div class="flex items-center justify-center h-full">
+                        <p id="loadingGroupsText" class="text-gray-500">Carregando grupos...</p>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-4" id="selectAllContainer" class="hidden">
+                 <div class="flex items-center">
+                    <input id="selectAllCheckbox" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-green-500">
+                    <label for="selectAllCheckbox" class="ml-3 block text-sm font-medium text-gray-700">Selecionar Todos</label>
+                </div>
+            </div>
+        </div>
+        <div class="bg-gray-50 px-6 py-4 flex flex-col sm:flex-row-reverse sm:space-x-4 sm:space-x-reverse rounded-b-2xl">
+            <button id="extractConfirmButton" class="w-full sm:w-auto inline-flex justify-center rounded-lg border border-transparent shadow-sm px-6 py-3 bg-green-600 text-base font-bold text-white hover:bg-green-700 transition">
+                Extrair Contatos
+            </button>
+            <button id="closeModalButton" class="w-full sm:w-auto mt-3 sm:mt-0 inline-flex justify-center rounded-lg border border-gray-300 shadow-sm px-6 py-3 bg-white text-base font-bold text-gray-700 hover:bg-gray-50 transition">
+                Cancelar
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // --- Variáveis dos Elementos ---
+    const openModalButton = document.getElementById('openModalButton');
+    const statusArea = document.getElementById('statusArea');
+    const statusText = document.getElementById('statusText');
+    const progressBar = document.getElementById('progressBar');
+    
+    // --- Variáveis do Modal ---
+    const modal = document.getElementById('groupSelectModal');
+    const modalPanel = document.getElementById('modal-panel');
+    const groupListContainer = document.getElementById('groupListContainer');
+    const extractConfirmButton = document.getElementById('extractConfirmButton');
+    const closeModalButton = document.getElementById('closeModalButton');
+    const selectAllContainer = document.getElementById('selectAllContainer');
+    const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+
+    let intervalId;
+
+    // --- Funções do Modal ---
+    function showModal() {
+        modal.classList.remove('hidden');
+        setTimeout(() => { // Pequeno delay para a transição funcionar
+            modal.classList.remove('opacity-0');
+            modalPanel.classList.remove('scale-95', 'opacity-0');
+        }, 10);
+        
+        groupListContainer.innerHTML = '<p id="loadingGroupsText" class="text-gray-500 text-center">Carregando grupos...</p>';
+        selectAllContainer.classList.add('hidden');
+
+        fetch("{% url 'api_listar_grupos' %}")
+            .then(response => {
+                if (!response.ok) throw new Error('Falha na resposta da rede.');
+                return response.json();
+            })
+            .then(data => {
+                groupListContainer.innerHTML = '';
+                if (data.groups && data.groups.length > 0) {
+                    data.groups.forEach(group => {
+                        const div = document.createElement('div');
+                        div.className = 'relative flex items-start py-2';
+                        const checkbox = document.createElement('input');
+                        checkbox.type = 'checkbox';
+                        checkbox.id = group.id;
+                        checkbox.value = group.id;
+                        checkbox.className = 'h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-green-500';
+                        const label = document.createElement('label');
+                        label.htmlFor = group.id;
+                        label.textContent = group.name || '(Grupo sem nome)';
+                        label.className = 'ml-3 block text-sm font-medium text-gray-700';
+                        
+                        div.appendChild(checkbox);
+                        div.appendChild(label);
+                        groupListContainer.appendChild(div);
+                    });
+                    selectAllContainer.classList.remove('hidden');
+                } else {
+                    groupListContainer.innerHTML = '<p class="text-gray-500 text-center">Nenhum grupo encontrado.</p>';
+                }
+            })
+            .catch(error => {
+                console.error("Erro ao buscar grupos:", error);
+                groupListContainer.innerHTML = '<p class="text-red-500 text-center">Erro ao carregar grupos. Tente novamente.</p>';
+            });
+    }
+
+    function hideModal() {
+        modal.classList.add('opacity-0');
+        modalPanel.classList.add('scale-95', 'opacity-0');
+        setTimeout(() => {
+            modal.classList.add('hidden');
+        }, 300); // Espera a transição terminar
+    }
+
+    selectAllCheckbox.addEventListener('change', function() {
+        const checkboxes = groupListContainer.querySelectorAll('input[type="checkbox"]');
+        checkboxes.forEach(cb => {
+            cb.checked = selectAllCheckbox.checked;
+        });
+    });
+
+    // --- Lógica Principal ---
+    if (openModalButton) openModalButton.addEventListener('click', showModal);
+    closeModalButton.addEventListener('click', hideModal);
+
+    extractConfirmButton.addEventListener('click', function() {
+        const selectedCheckboxes = groupListContainer.querySelectorAll('input[type="checkbox"]:checked');
+        const selectedGroupIds = Array.from(selectedCheckboxes).map(cb => cb.value);
+
+        if (selectedGroupIds.length === 0) {
+            alert('Por favor, selecione pelo menos um grupo.');
+            return;
+        }
+
+        hideModal();
+        openModalButton.disabled = true;
+        statusArea.classList.remove('hidden');
+        statusText.textContent = 'Iniciando a tarefa...';
+        progressBar.style.width = '5%';
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        
+        fetch("{% url 'iniciar_exportacao' %}", {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrfToken,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ group_ids: selectedGroupIds })
+        })
+        .then(response => {
+             if (!response.ok) {
+                return response.json().then(err => { throw new Error(err.error || 'Erro do servidor'); });
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.task_id) {
+                statusText.textContent = 'Tarefa iniciada. Acompanhando progresso...';
+                progressBar.style.width = '10%';
+                intervalId = setInterval(() => checkTaskStatus(data.task_id), 3000);
+            } else {
+                throw new Error(data.error || 'Não foi possível obter o ID da tarefa.');
+            }
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            statusText.textContent = `Erro ao iniciar a tarefa: ${error.message}`;
+            openModalButton.disabled = false;
+        });
+    });
+
+    // A função checkTaskStatus que já funcionava e foi testada
+    function checkTaskStatus(taskId) {
+        fetch(`/api/status-exportacao/${taskId}/`)
+            .then(response => {
+                if (!response.ok) throw new Error(`Erro de rede ou servidor: ${response.statusText}`);
+                return response.json();
+            })
+            .then(data => {
+                if (data.state === 'PENDING') {
+                    statusText.textContent = 'Tarefa na fila, aguardando para iniciar...';
+                    progressBar.style.width = '10%';
+                } else if (data.state === 'PROGRESS') {
+                    const meta = data.meta || {};
+                    const current = meta.current || 0;
+                    const total = meta.total || 1;
+                    const status = meta.status || `Processando ${current} de ${total}...`;
+                    statusText.textContent = status;
+                    let progress = 10 + (current / total) * 85;
+                    progressBar.style.width = `${progress}%`;
+                } else if (data.state === 'SUCCESS') {
+                    clearInterval(intervalId);
+                    
+                    // Se a tarefa retornar "EMPTY", não tenta baixar
+                    if (data.result === 'EMPTY') {
+                        statusText.textContent = 'Extração concluída. Nenhum contato encontrado nos grupos selecionados.';
+                    } else {
+                        statusText.textContent = 'Extração concluída! O seu download irá começar.';
+                        progressBar.style.width = '100%';
+                        const downloadUrl = `/download-exportacao/${taskId}/`;
+                        window.location.href = downloadUrl;
+                    }
+                    
+                    setTimeout(() => {
+                        openModalButton.disabled = false;
+                        openModalButton.textContent = 'Selecionar Grupos e Iniciar Extração';
+                    }, 3000);
+                } else if (data.state === 'FAILURE') {
+                    clearInterval(intervalId);
+                    const status = data.meta ? data.meta.status : 'Erro desconhecido.';
+                    statusText.textContent = `Ocorreu um erro: ${status}`;
+                    progressBar.classList.remove('bg-blue-600');
+                    progressBar.classList.add('bg-red-600');
+                    openModalButton.disabled = false;
+                }
+            })
+            .catch(error => {
+                console.error('Erro ao verificar status:', error);
+                statusText.textContent = 'Erro de comunicação com o servidor.';
+                clearInterval(intervalId);
+                openModalButton.disabled = false;
+            });
+    }
+});
+</script>
+{% endblock %}

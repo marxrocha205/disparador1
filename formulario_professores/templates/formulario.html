@@ -1,0 +1,274 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block titulo %}{{ titulo }}{% endblock %}
+
+{% block conteudo %}
+<div class="max-w-4xl mx-auto p-4">
+    <div class="bg-white p-6 sm:p-8 rounded-2xl shadow-lg">
+        <h1 class="text-3xl font-bold text-gray-800 mb-6 border-b pb-4">{{ titulo }}</h1>
+
+        {% if form.non_field_errors %} 
+        <div class="mb-6 p-4 bg-red-100 text-red-700 rounded-md border border-red-200">
+            <p class="font-bold">Por favor, corrija os seguintes erros:</p>
+            <ul class="list-disc list-inside mt-2">
+                {% for error in form.non_field_errors %} 
+                <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+
+        <form method="POST" enctype="multipart/form-data" id="mensagemForm" class="space-y-8">
+            {% csrf_token %}
+            {{ form.contato }} {# HiddenInput para o campo principal de contatos #}
+
+            <fieldset class="p-6 border border-gray-200 rounded-xl">
+                <legend class="text-lg font-semibold text-gray-800 px-2">1. Destinatários</legend>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                    <div>
+                        <label for="{{ form.contato_digitado.id_for_label }}" class="block text-sm font-semibold text-gray-700">{{ form.contato_digitado.label }}</label>
+                        <textarea name="{{ form.contato_digitado.name }}" id="{{ form.contato_digitado.id_for_label }}" rows="4" class="mt-2 w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition duration-300">{{ form.contato_digitado.value|default_if_none:'' }}</textarea>
+                        {% if form.contato_digitado.help_text %}<p class="mt-1 text-xs text-gray-500">{{ form.contato_digitado.help_text|safe }}</p>{% endif %}
+                        {% for error in form.contato_digitado.errors %}<p class="text-red-500 text-sm mt-1">{{ error }}</p>{% endfor %}
+                    </div>
+                    <div>
+                        <label for="{{ form.contacts_file.id_for_label }}" class="block text-sm font-semibold text-gray-700">{{ form.contacts_file.label }}</label>
+                        <input type="file" name="{{ form.contacts_file.name }}" id="{{ form.contacts_file.id_for_label }}" class="mt-2 block w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100 transition">
+                        <div id="contacts_file_info" class="text-sm text-gray-600 mt-2 font-medium"></div>
+                        {% if form.contacts_file.help_text %}<p class="mt-1 text-xs text-gray-500">{{ form.contacts_file.help_text|safe }}</p>{% endif %}
+                        {% for error in form.contacts_file.errors %}<p class="text-red-500 text-sm mt-1">{{ error }}</p>{% endfor %}
+                    </div>
+                </div>
+            </fieldset>
+
+            <fieldset class="p-6 border border-gray-200 rounded-xl">
+                <legend class="text-lg font-semibold text-gray-800 px-2">2. Conteúdo</legend>
+                <div class="space-y-6 mt-4">
+                    <div>
+                        <label for="{{ form.titulo.id_for_label }}" class="block text-sm font-semibold text-gray-700">{{ form.titulo.label }}</label>
+                        <input type="text" name="{{ form.titulo.name }}" id="{{ form.titulo.id_for_label }}" class="mt-2 w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition" value="{{ form.titulo.value|default_if_none:'' }}">
+                        {% for error in form.titulo.errors %}<p class="text-red-500 text-sm mt-1">{{ error }}</p>{% endfor %}
+                    </div>
+
+                    <div>
+                        <label for="{{ form.modo_envio.id_for_label }}" class="block text-sm font-semibold text-gray-700">{{ form.modo_envio.label }}</label>
+                        <select name="{{ form.modo_envio.name }}" id="{{ form.modo_envio.id_for_label }}" class="mt-2 w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition bg-white">
+                            {% for value, text in form.modo_envio.field.choices %}
+                                <option value="{{ value }}" {% if form.modo_envio.value|stringformat:"s" == value|stringformat:"s" %}selected{% endif %}>{{ text }}</option>
+                            {% endfor %}
+                        </select>
+                        {% for error in form.modo_envio.errors %}<p class="text-red-500 text-sm mt-1">{{ error }}</p>{% endfor %}
+                    </div>
+
+                    <div class="hidden" id="campo_midia">
+                        <label class="block text-sm font-semibold text-gray-700">Mídia Associada</label>
+                        <select name="midia" id="id_midia_select" class="mt-2 w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition bg-white">
+                            <option value="">Selecione uma mídia...</option>
+                            {% for midia_obj in midias %}
+                                <option value="{{ midia_obj.id }}" {% if midia_select and midia_select.id == midia_obj.id %}selected{% endif %}>{{ midia_obj.nome }} ({{ midia_obj.get_tipo_display }})</option>
+                            {% endfor %}
+                        </select>
+                        <p class="text-xs text-gray-500 mt-1">Para usar um novo arquivo, faça o <a class="font-semibold text-green-600 hover:underline" href="{% url 'upload_midia' %}">upload de mídia</a> primeiro.</p>
+                    </div>
+
+                    <div class="hidden" id="campo_tipo_envio">
+                        <label for="{{ form.tipo_envio.id_for_label }}" class="block text-sm font-semibold text-gray-700">{{ form.tipo_envio.label }}</label>
+                        <select name="{{ form.tipo_envio.name }}" id="{{ form.tipo_envio.id_for_label }}" class="mt-2 w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition bg-white">
+                            {% for value, text in form.tipo_envio.field.choices %}
+                                <option value="{{ value }}" {% if form.tipo_envio.value == value %}selected{% endif %}>{{ text }}</option>
+                            {% endfor %}
+                        </select>
+                         {% for error in form.tipo_envio.errors %}<p class="text-red-500 text-sm mt-1">{{ error }}</p>{% endfor %}
+                    </div>
+
+                    <div class="hidden" id="campo_mensagem">
+                        <label for="{{ form.mensagem_notificacao.id_for_label }}" class="block text-sm font-semibold text-gray-700">{{ form.mensagem_notificacao.label }}</label>
+                        <textarea name="{{ form.mensagem_notificacao.name }}" id="{{ form.mensagem_notificacao.id_for_label }}" rows="5" class="mt-2 w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition">{{ form.mensagem_notificacao.value|default_if_none:'' }}</textarea>
+                         {% for error in form.mensagem_notificacao.errors %}<p class="text-red-500 text-sm mt-1">{{ error }}</p>{% endfor %}
+                    </div>
+                </div>
+            </fieldset>
+
+            <fieldset class="p-6 border border-gray-200 rounded-xl">
+                <legend class="text-lg font-semibold text-gray-800 px-2">3. Agendamento</legend>
+                <div id="campos_agendamento_principal" class="mt-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="{{ form.dias_disparo.id_for_label }}" class="block text-sm font-semibold text-gray-700">{{ form.dias_disparo.label }}</label>
+                            <input type="text" name="{{ form.dias_disparo.name }}" id="{{ form.dias_disparo.id_for_label }}" class="mt-2 w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition bg-white" placeholder="Selecione uma ou mais datas">
+                             {% for error in form.dias_disparo.errors %}<p class="text-red-500 text-sm mt-1">{{ error }}</p>{% endfor %}
+                        </div>
+                        <div>
+                            <label for="{{ form.horario_disparo.id_for_label }}" class="block text-sm font-semibold text-gray-700">{{ form.horario_disparo.label }}</label>
+                            <input type="time" name="{{ form.horario_disparo.name }}" id="{{ form.horario_disparo.id_for_label }}" class="mt-2 w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition" value="{{ form.horario_disparo.value|date:'H:i'|default:'09:00' }}">
+                             {% for error in form.horario_disparo.errors %}<p class="text-red-500 text-sm mt-1">{{ error }}</p>{% endfor %}
+                        </div>
+                    </div>
+                    {% if form.dias_disparo.help_text %}<p class="mt-2 text-xs text-gray-500">{{ form.dias_disparo.help_text|safe }}</p>{% endif %}
+                </div>
+
+                <div id="lotes_agendamento_container" class="hidden mt-6">
+                    <div class="p-4 border-l-4 border-green-400 bg-green-50 rounded-md">
+                        <h4 class="text-md font-semibold text-green-800 mb-2">Agendamento Detalhado por Lotes</h4>
+                        <p class="text-sm text-green-700 mb-4" id="lotes_mensagem_info"></p>
+                        <div id="lotes_fields_area" class="space-y-4"></div>
+                    </div>
+                </div>
+
+                <div class="mt-6">
+                    <label for="{{ form.intervalo_disparo.id_for_label }}" class="block text-sm font-semibold text-gray-700">{{ form.intervalo_disparo.label }} (em segundos)</label>
+                    <input type="number" name="{{ form.intervalo_disparo.name }}" id="{{ form.intervalo_disparo.id_for_label }}" class="mt-2 w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition" value="{{ form.intervalo_disparo.value|default:5 }}">
+                     {% for error in form.intervalo_disparo.errors %}<p class="text-red-500 text-sm mt-1">{{ error }}</p>{% endfor %}
+                </div>
+            </fieldset>
+
+            <div class="pt-6 flex items-center justify-end space-x-4">
+                <a href="{% url 'listar_aulas' %}" class="bg-gray-200 text-gray-800 font-bold py-3 px-6 rounded-lg hover:bg-gray-300 transition duration-300">
+                    Cancelar
+                </a>
+                <button type="submit" class="bg-green-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-green-700 transition duration-300 shadow-sm">
+                    {{ mensagem_botao }}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{{ block.super }}
+
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://npmcdn.com/flatpickr/dist/l10n/pt.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        // Inicializa o calendário principal
+        const diasDisparoInput = document.getElementById("{{ form.dias_disparo.id_for_label }}");
+        if (diasDisparoInput) {
+            flatpickr(diasDisparoInput, {
+                mode: "multiple",
+                dateFormat: "Y-m-d",
+                locale: "pt",
+                minDate: "today",
+                defaultDate: {{ form.dias_disparo.value|default:'[]'|safe }}
+            });
+        }
+        
+        // --- Lógica de visibilidade dos campos ---
+        const modoEnvio = document.getElementById("{{ form.modo_envio.id_for_label }}");
+        const campoMidia = document.getElementById("campo_midia");
+        const campoMensagem = document.getElementById("campo_mensagem");
+        const campoTipoEnvio = document.getElementById("campo_tipo_envio");
+        
+        function atualizarCamposVisiveisModoEnvio() {
+            if (!modoEnvio) return;
+            const valor = modoEnvio.value;
+            campoMidia.classList.toggle("hidden", !['midia', 'ambos'].includes(valor));
+            campoMensagem.classList.toggle("hidden", !['texto', 'ambos'].includes(valor));
+            campoTipoEnvio.classList.toggle("hidden", valor !== 'ambos');
+        }
+
+        if (modoEnvio) {
+            modoEnvio.addEventListener("change", atualizarCamposVisiveisModoEnvio);
+            atualizarCamposVisiveisModoEnvio(); 
+        }
+
+        // --- Lógica para processar lotes ---
+        const contatoDigitadoInput = document.getElementById("{{ form.contato_digitado.id_for_label }}");
+        const contactsFileInput = document.getElementById("{{ form.contacts_file.id_for_label }}");
+        const fileInfoDiv = document.getElementById('contacts_file_info');
+        const lotesAgendamentoContainer = document.getElementById("lotes_agendamento_container");
+        const lotesFieldsArea = document.getElementById("lotes_fields_area");
+        const TAMANHO_LOTE = parseInt("{{ TAMANHO_LOTE_CONTATOS_FORM|default:65 }}");
+        const camposAgendamentoPrincipalDiv = document.getElementById('campos_agendamento_principal');
+        const lotesMensagemInfo = document.getElementById('lotes_mensagem_info');
+        
+        async function processarEExibirLotes() {
+            let todosOsNumeros = [];
+            if (contatoDigitadoInput && contatoDigitadoInput.value.trim() !== "") {
+                todosOsNumeros.push(...contatoDigitadoInput.value.split(',').map(n => n.trim()).filter(n => n));
+            }
+
+            if (contactsFileInput && contactsFileInput.files.length > 0) {
+                const file = contactsFileInput.files[0];
+                if(fileInfoDiv) fileInfoDiv.textContent = `⏳ Processando ${file.name}...`;
+                try {
+                    const data = await file.arrayBuffer();
+                    const workbook = XLSX.read(data, {type: 'array'});
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet, {header: 1, defval:""});
+                    let numerosDoArquivo = jsonData.map(row => row[0] ? String(row[0]).trim() : "").filter(n => n);
+                    todosOsNumeros.push(...numerosDoArquivo);
+                    if(fileInfoDiv) fileInfoDiv.textContent = `✅ ${file.name} processado. Encontrados ${numerosDoArquivo.length} contatos.`;
+                } catch (error) {
+                    if(fileInfoDiv) fileInfoDiv.textContent = `❌ Erro ao ler ${file.name}. Verifique o formato.`;
+                }
+            }
+            
+            const numerosUnicos = [...new Set(todosOsNumeros.filter(n => n))];
+            if(fileInfoDiv && numerosUnicos.length > 0) {
+                fileInfoDiv.textContent += ` Total combinado: ${numerosUnicos.length} contatos únicos.`;
+            }
+
+            if (lotesFieldsArea) {
+                lotesFieldsArea.innerHTML = ''; 
+            }
+            
+            if (numerosUnicos.length > TAMANHO_LOTE) {
+                if(lotesAgendamentoContainer) lotesAgendamentoContainer.classList.remove('hidden');
+                if(camposAgendamentoPrincipalDiv) camposAgendamentoPrincipalDiv.classList.add('hidden');
+                if(lotesMensagemInfo) lotesMensagemInfo.textContent = `Detectamos ${numerosUnicos.length} contatos. Serão divididos em lotes de até ${TAMANHO_LOTE}. Defina o dia e horário para cada lote abaixo:`;
+
+                const numLotes = Math.ceil(numerosUnicos.length / TAMANHO_LOTE);
+                
+                const diaBaseInput = document.getElementById('{{ form.dias_disparo.id_for_label }}');
+                const horaBaseInput = document.getElementById('{{ form.horario_disparo.id_for_label }}');
+                
+                const diaBase = diaBaseInput && diaBaseInput.value.split(',')[0].trim() ? diaBaseInput.value.split(',')[0].trim() : new Date().toISOString().split('T')[0];
+                const horaBase = horaBaseInput && horaBaseInput.value ? horaBaseInput.value : "09:00";
+
+                for (let i = 0; i < numLotes; i++) {
+                    const loteDiv = document.createElement('div');
+                    loteDiv.className = 'p-3 border rounded-md bg-white shadow-sm';
+                    const dataInputId = `lote_${i}_data`;
+                    const horaInputId = `lote_${i}_hora`;
+                    loteDiv.innerHTML = `
+                        <p class="font-semibold text-gray-700 mb-2">Lote ${i + 1} (Contatos: ${i * TAMANHO_LOTE + 1} - ${Math.min((i + 1) * TAMANHO_LOTE, numerosUnicos.length)})</p>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label for="${dataInputId}" class="block text-sm font-medium text-gray-600">Data Disparo Lote ${i+1}:</label>
+                                <input type="text" name="${dataInputId}" id="${dataInputId}" value="${diaBase}" required class="mt-1 flatpickr-lote w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm">
+                            </div>
+                            <div>
+                                <label for="${horaInputId}" class="block text-sm font-medium text-gray-600">Horário Disparo Lote ${i+1}:</label>
+                                <input type="time" name="${horaInputId}" id="${horaInputId}" value="${horaBase}" required class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm">
+                            </div>
+                        </div>
+                    `;
+                    if(lotesFieldsArea) lotesFieldsArea.appendChild(loteDiv);
+                    flatpickr(`#${dataInputId}`, { dateFormat: "Y-m-d", locale: "pt", minDate: "today" });
+                }
+            } else { 
+                if(lotesAgendamentoContainer) lotesAgendamentoContainer.classList.add('hidden');
+                if(camposAgendamentoPrincipalDiv) camposAgendamentoPrincipalDiv.classList.remove('hidden'); 
+                if(fileInfoDiv && numerosUnicos.length > 0) { 
+                    fileInfoDiv.textContent = `Total de ${numerosUnicos.length} contatos. Serão enviados com a data e hora principal.`;
+                } else if (fileInfoDiv && numerosUnicos.length === 0 && ( (contatoDigitadoInput && contatoDigitadoInput.value.trim() !== "") || (contactsFileInput && contactsFileInput.files.length > 0) ) ) {
+                    fileInfoDiv.textContent = 'Nenhum contato válido encontrado.';
+                } else if (fileInfoDiv) {
+                    fileInfoDiv.textContent = ''; 
+                }
+            }
+        }
+
+        if(contatoDigitadoInput) contatoDigitadoInput.addEventListener('input', processarEExibirLotes);
+        if(contactsFileInput) contactsFileInput.addEventListener('change', processarEExibirLotes);
+        
+        processarEExibirLotes(); 
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,116 @@
+services:
+  # --- BANCO DE DADOS PARA DJANGO ---
+  db:
+    image: postgres:16
+    container_name: django_postgres_db
+    restart: always
+    environment:
+      - POSTGRES_DB=${DATABASE_NAME}
+      - POSTGRES_USER=${DATABASE_USER}
+      - POSTGRES_PASSWORD=${DATABASE_PASSWORD}
+    ports:
+      - "5434:5432"
+    volumes:
+      - django_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USER} -d ${DATABASE_NAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # --- BANCO DE DADOS PARA EVOLUTION ---
+  db_evolution:
+    image: postgres:16
+    container_name: evolution_postgres_db
+    restart: always
+    environment:
+      - POSTGRES_USER=evolution
+      - POSTGRES_PASSWORD=1234
+      - POSTGRES_DB=evolution_db
+    ports:
+      - "5435:5432"
+    volumes:
+      - evolution_postgres_data:/var/lib/postgresql/data
+
+  # --- REDIS (COMPARTILHADO) ---
+  redis:
+    image: redis:latest
+    container_name: shared_redis
+    restart: always
+    ports:
+      - "6379:6379"
+
+  # --- SERVIÇOS DO DJANGO ---
+  web:
+    build: .
+    container_name: django_web
+    # COMANDO SIMPLIFICADO: Apenas executa as migrações e o servidor.
+    # O 'depends_on' com 'service_healthy' já garante que o DB está pronto.
+    command: >
+      sh -c "python manage.py migrate &&
+             gunicorn setup.wsgi:application --bind 0.0.0.0:8000"
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    env_file: .env
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+        
+  celery:
+    build: .
+    container_name: django_celery
+    # COMANDO SIMPLIFICADO: Apenas inicia o worker.
+    command: celery -A setup worker --loglevel=info
+    volumes:
+      - .:/app
+    env_file: .env
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+  celery-beat:
+    build: .
+    container_name: django_celery_beat
+    # COMANDO SIMPLIFICADO: Apenas inicia o beat.
+    command: celery -A setup beat --loglevel=info
+    volumes:
+      - .:/app
+    env_file: .env
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+  # --- SERVIÇO DA EVOLUTION API ---
+  evolution_api:
+    image: atendai/evolution-api:v2.1.1
+    container_name: evolution_api_service
+    restart: always
+    ports:
+      - "8081:8080"
+    environment:
+      - AUTHENTICATION_TYPE=apikey
+      - AUTHENTICATION_API_KEY=${EVOLUTION_API_KEY}
+      - DATABASE_PROVIDER=postgresql
+      - DATABASE_ENABLED=true
+      - DATABASE_CONNECTION_URI=postgres://evolution:1234@db_evolution:5432/evolution_db
+      - CACHE_REDIS_ENABLED=true
+      - CACHE_REDIS_URI=redis://redis:6379
+      - SERVER_URL=http://localhost:8081
+      - PORT=8080
+      - CONFIG_SESSION_PHONE_VERSION=2.3000.1023204200
+      - MESSAGE_CHECK_NUMBER=false
+    depends_on:
+      - db_evolution
+      - redis
+
+volumes:
+  django_postgres_data:
+  evolution_postgres_data:

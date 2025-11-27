@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block titulo %}Status da Instância{% endblock %}
+{% block conteudo %}
+<div class="container py-8 mx-auto px-4">
+    <h1 class="text-3xl font-bold text-center mb-6">Gerir Instância</h1>
+
+    <div class="bg-white p-6 rounded-lg shadow-md max-w-2xl mx-auto">
+        <div class="flex justify-center mb-4">
+            {% if status_conexao %}
+                <span class="bg-green-100 text-green-700 font-semibold px-4 py-2 rounded-full">Você já está conectado!</span>
+            {% else %}
+                <span class="bg-red-100 text-red-700 font-semibold px-4 py-2 rounded-full">Você não está conectado.</span>
+            {% endif %}
+        </div>
+    
+        {% if qr_code_img_tag %}
+            <h2 class="text-2xl font-semibold text-center mb-4">Escaneie o QR Code</h2>
+            <div class="flex justify-center">
+                <img src="{{ qr_code_img_tag }}" alt="QR Code" class="w-64 h-64 border rounded-lg">
+            </div>
+            <p class="text-center text-gray-600 mt-4">Após escanear, esta página deverá atualizar automaticamente. Se não, recarregue-a.</p>
+        {% elif not status_conexao %}
+            <p class="text-center text-gray-600">Se o QR Code não aparecer, recarregue a página em alguns segundos. Se o problema persistir, verifique as suas credenciais.</p>
+        {% endif %}
+
+        <hr class="my-6">
+
+        <div class="text-sm text-gray-700">
+            <p><strong>ID da sua Instância:</strong> <span class="font-mono bg-gray-100 p-1 rounded">{{ instancia_obj.id_instancia }}</span></p>
+            <p class="mt-2">Para alterar as credenciais, simplesmente submeta o formulário abaixo com os novos valores.</p>
+        </div>
+
+        <h3 class="text-xl font-semibold text-center mt-8 mb-4">Atualizar Credenciais</h3>
+        <form method="POST" action="{% url 'salvar_instancia' %}" class="space-y-4">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <div class="flex justify-end">
+                <button type="submit" class="bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600">
+                    Salvar / Atualizar
+                </button>
+            </div>
+        </form>
+
+        <div class="mt-8 pt-6 border-t border-red-200">
+            <h3 class="text-xl font-semibold text-center text-red-700">Zona de Perigo</h3>
+            <p class="text-center text-sm text-gray-600 mt-2">
+                Remover a configuração irá desvincular permanentemente esta instância da sua conta.
+            </p>
+            <div class="flex justify-center mt-4">
+                <form method="POST" action="{% url 'remover_instancia' %}" onsubmit="return confirm('Tem a certeza que deseja remover a configuração desta instância da sua conta?');">
+                    {% csrf_token %}
+                    <button type="submit" class="bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700">
+                        Remover Configuração da Instância
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

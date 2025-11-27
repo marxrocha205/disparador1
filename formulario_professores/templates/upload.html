@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block titulo %}Upload de Mídia{% endblock %}
+
+{% block conteudo %}
+<div class="max-w-2xl mx-auto">
+    <div class="bg-white p-8 rounded-2xl shadow-lg">
+        <div class="text-center">
+            <h1 class="text-3xl font-bold text-gray-800 mb-2">Upload de Mídia</h1>
+            <p class="text-gray-600 mb-6">Adicione um novo arquivo à sua biblioteca.</p>
+        </div>
+        <hr class="my-6">
+
+        {% if form.non_field_errors %}
+        <div class="mb-6 p-4 bg-red-100 text-red-700 rounded-md border border-red-200">
+            <p class="font-bold">Ocorreu um erro:</p>
+            <ul class="list-disc list-inside mt-2">
+                {% for error in form.non_field_errors %} 
+                <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+
+        <form method="POST" enctype="multipart/form-data" class="space-y-6">
+            {% csrf_token %}
+
+            <div>
+                <label for="{{ form.nome.id_for_label }}" class="block text-sm font-semibold text-gray-700">{{ form.nome.label }}</label>
+                <input 
+                    type="text" 
+                    name="{{ form.nome.name }}" 
+                    id="{{ form.nome.id_for_label }}" 
+                    class="mt-2 w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition" 
+                    value="{{ form.nome.value|default_if_none:'' }}"
+                    placeholder="Ex: Áudio de Boas-Vindas"
+                >
+                {% for error in form.nome.errors %}<p class="text-red-500 text-xs mt-1">{{ error }}</p>{% endfor %}
+            </div>
+
+            <div>
+                <label for="{{ form.tipo.id_for_label }}" class="block text-sm font-semibold text-gray-700">{{ form.tipo.label }}</label>
+                <select 
+                    name="{{ form.tipo.name }}" 
+                    id="{{ form.tipo.id_for_label }}" 
+                    class="mt-2 w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition bg-white"
+                >
+                    {% for value, text in form.tipo.field.choices %}
+                        <option value="{{ value }}" {% if form.tipo.value == value %}selected{% endif %}>{{ text }}</option>
+                    {% endfor %}
+                </select>
+                {% for error in form.tipo.errors %}<p class="text-red-500 text-xs mt-1">{{ error }}</p>{% endfor %}
+            </div>
+
+            <div>
+                <label for="{{ form.descricao.id_for_label }}" class="block text-sm font-semibold text-gray-700">{{ form.descricao.label }}</label>
+                <textarea 
+                    name="{{ form.descricao.name }}" 
+                    id="{{ form.descricao.id_for_label }}" 
+                    rows="3" 
+                    class="mt-2 w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
+                    placeholder="Uma breve descrição sobre o arquivo (opcional)"
+                >{{ form.descricao.value|default_if_none:'' }}</textarea>
+                {% for error in form.descricao.errors %}<p class="text-red-500 text-xs mt-1">{{ error }}</p>{% endfor %}
+            </div>
+
+            <div>
+                <label for="{{ form.arquivo.id_for_label }}" class="block text-sm font-semibold text-gray-700">{{ form.arquivo.label }}</label>
+                <input 
+                    type="file" 
+                    name="{{ form.arquivo.name }}" 
+                    id="{{ form.arquivo.id_for_label }}" 
+                    class="mt-2 block w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100 transition"
+                >
+                {% for error in form.arquivo.errors %}<p class="text-red-500 text-xs mt-1">{{ error }}</p>{% endfor %}
+            </div>
+
+            <div class="pt-6 flex items-center justify-end space-x-4">
+                <a href="{% url 'listar_midias' %}" class="bg-gray-200 text-gray-800 font-bold py-3 px-6 rounded-lg hover:bg-gray-300 transition duration-300">
+                    Cancelar
+                </a>
+                <button type="submit" class="bg-green-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-green-700 transition duration-300 shadow-sm">
+                    Enviar
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

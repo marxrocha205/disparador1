@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block titulo %}Editar Mídia{% endblock %}
+{% block conteudo %}
+<div class="container mx-auto py-6">
+    <h2 class="text-3xl font-bold text-center mb-6">Editar Mídia</h2>
+
+    <div class="max-w-lg mx-auto bg-white p-6 rounded-lg shadow-md">
+        <form method="post" enctype="multipart/form-data" class="space-y-4">
+            {% csrf_token %}
+
+            {% for field in form %}
+            <div>
+                {% if field.name == "arquivo" %}
+                    <div>
+                        <label for="{{ field.id_for_label }}" class="block text-gray-700 font-semibold">{{ field.label }}</label>
+                        <input type="file" name="{{ field.name }}" id="{{ field.id_for_label }}" class="block w-full">
+                    </div>
+                {% else %}
+                    <div>
+                        <label for="{{ field.id_for_label }}" class="block text-gray-700 font-semibold">{{ field.label }}</label>
+                        {{ field }}
+                    </div>
+                {% endif %}
+                {% if field.help_text %}
+                    <p class="text-sm text-gray-500">{{ field.help_text }}</p>
+                {% endif %}
+                {% for error in field.errors %}
+                    <p class="text-red-500 text-sm">{{ error }}</p>
+                {% endfor %}
+            </div>
+            {% endfor %}
+
+            <div class="flex justify-center items-center mt-4">
+                <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600">
+                    💾 Salvar Alterações
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

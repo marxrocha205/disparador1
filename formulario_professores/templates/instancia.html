@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block titulo %}Aulas{% endblock %}
+{% block conteudo %}
+    <div class="container py-2 mx-auto">
+        {% if id_instancia %}
+            <div class="flex justify-center mb-4">
+                {% if status.connected %}
+                    <span class="bg-green-500 text-white px-4 py-2 rounded-md inline-block">Você já está conectado!</span>
+                {% else %}
+                    <span class="bg-red-500 text-white px-4 py-2 rounded-md inline-block">Você não está conectado, se conecte para enviar as mensagens!</span>
+                {% endif %}
+            </div>
+    
+            {% if qr_code_img_tag %}
+                <h1 class="text-3xl font-bold text-center mb-6">Escaneie o QR Code</h1>
+                <div class="flex justify-center">
+                    <!-- Exibe o QR Code com base64 diretamente -->
+                        <img src="{{ qr_code_img_tag }}" alt="QR Code" class="w-64 h-64">
+                </div>
+                <p class="font-bold text-center">Ao escaner o QR Code, volte ao a pagina principal para utilizar o sistema!</p>
+            {% endif %}
+
+
+    
+        {% else %}
+            <h1 class="text-3xl font-bold text-center mb-6">Criar Instância</h1>
+            <div class="flex justify-center">
+                <form method="POST" action="{% url 'criar_instancia' %}" class="bg-white p-6 rounded-lg shadow-md w-96">
+                    {% csrf_token %}
+                    <input type="text" name="nome" placeholder="Digite seu nome" class="border border-gray-300 p-2 rounded-md w-full mb-4">
+                    <button type="submit" class="bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 w-full">
+                        Criar Instância
+                    </button>
+                </form>
+            </div>
+        {% endif %}
+    </div>
+
+    <script src="{% static 'js/script.js' %}"></script>
+{% endblock %}
