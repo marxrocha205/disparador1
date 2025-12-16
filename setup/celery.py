@@ -10,11 +10,8 @@ app = Celery('formulario_professores', broker=settings.CELERY_BROKER_URL)
 
 # Carrega as configurações do Django no Celery
 app.config_from_object('django.conf:settings', namespace='CELERY')
-
-# Define fuso horário do Celery para São Paulo e desativa UTC
 app.conf.timezone = 'America/Sao_Paulo'
 app.conf.enable_utc = False
-
 # Descobre tarefas automaticamente nos aplicativos do Django
 app.autodiscover_tasks()
 
