@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+{% block titulo %}Configurar Evolution API{% endblock %}
+
+{% block conteudo %}
+<div class="max-w-3xl mx-auto">
+    <div class="bg-white p-8 rounded-2xl shadow-lg">
+        <div class="text-center">
+            <h1 class="text-3xl font-bold text-gray-800 mb-2">Configuração da Evolution API</h1>
+            <p class="text-gray-600 mb-6">Insira as credenciais da sua instância para conectar o sistema ao WhatsApp.</p>
+        </div>
+        <hr class="my-6">
+
+        <form method="POST" class="space-y-6">
+            {% csrf_token %}
+            
+            <div>
+                <label for="{{ form.api_host.id_for_label }}" class="block text-sm font-semibold text-gray-700">{{ form.api_host.label }}</label>
+                {# Adicionando as classes do Tailwind diretamente no widget do Django #}
+                {{ form.api_host.as_widget.attrs.class }}
+                <input 
+                    type="url" 
+                    name="{{ form.api_host.name }}" 
+                    id="{{ form.api_host.id_for_label }}"
+                    class="mt-2 w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition duration-300"
+                    placeholder="http://seu-dominio:8080"
+                    value="{{ form.api_host.value|default_if_none:'' }}"
+                >
+                <p class="mt-2 text-sm text-gray-500">{{ form.api_host.help_text }}</p>
+                {% for error in form.api_host.errors %}<p class="text-red-500 text-xs mt-1">{{ error }}</p>{% endfor %}
+            </div>
+
+            <div>
+                <label for="{{ form.api_key.id_for_label }}" class="block text-sm font-semibold text-gray-700">{{ form.api_key.label }}</label>
+                <input 
+                    type="text"
+                    name="{{ form.api_key.name }}"
+                    id="{{ form.api_key.id_for_label }}"
+                    class="mt-2 w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition duration-300"
+                    placeholder="Sua chave secreta da API"
+                    value="{{ form.api_key.value|default_if_none:'' }}"
+                >
+                <p class="mt-2 text-sm text-gray-500">{{ form.api_key.help_text }}</p>
+                {% for error in form.api_key.errors %}<p class="text-red-500 text-xs mt-1">{{ error }}</p>{% endfor %}
+            </div>
+            
+            <div class="flex items-center pt-2">
+                <input 
+                    type="checkbox"
+                    name="{{ form.is_active.name }}"
+                    id="{{ form.is_active.id_for_label }}"
+                    class="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                    {% if form.is_active.value %}checked{% endif %}
+                >
+                <label for="{{ form.is_active.id_for_label }}" class="ml-3 block text-sm font-medium text-gray-800">{{ form.is_active.label }}</label>
+            </div>
+
+            <div class="flex justify-end pt-4">
+                <button type="submit" class="bg-green-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition duration-300">
+                    Salvar e Verificar Status
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

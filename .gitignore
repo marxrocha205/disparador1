@@ -1,0 +1,48 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+*.pdb
+*.egg-info/
+
+# Django
+*.log
+db.sqlite3
+/static/
+/staticfiles/
+/media/
+celerybeat-schedule*
+
+# VSCode
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Env
+.env
+.env.local
+
+# Docker
+*.pid
+*.seed
+docker-compose.override.yml
+
+# Node
+node_modules/
+
+# Others
+*.bak
+*.swp
+*.swo
+*.tmp
+*.orig
+
+# Let’s Encrypt
+letsencrypt/
+
+# Archive
+archive/
