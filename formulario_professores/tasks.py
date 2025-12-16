@@ -215,16 +215,17 @@ def verificar_disparos(self):
         for msg in mensagens_para_hoje:
             usuario = msg.usuario
             limite_obj = UserMessageLimit.objects.filter(user=usuario).first()
-            limite_diario = limite_obj.limite_diario if limite_obj else 65
+            # Ilimitado: se não houver registro ou se o limite for <= 0, não aplicar bloqueio
+            limite_diario = None if (not limite_obj or (limite_obj and (limite_obj.limite_diario or 0) <= 0)) else limite_obj.limite_diario
 
             enviadas_hoje = Enviadas.objects.filter(user=usuario, data_envio__date=agora.date()).count()
-            if enviadas_hoje >= limite_diario:
+            if limite_diario is not None and enviadas_hoje >= limite_diario:
                 logger.warning(f"VERIFICAR_DISPAROS: Limite diário atingido para {usuario.username}. Agendamento {msg.id} ignorado.")
                 continue
 
             delay = 0
             for contato_idx, contato in enumerate(msg.contato):
-                if Enviadas.objects.filter(user=usuario, data_envio__date=agora.date()).count() >= limite_diario:
+                if limite_diario is not None and Enviadas.objects.filter(user=usuario, data_envio__date=agora.date()).count() >= limite_diario:
                     logger.warning(f"VERIFICAR_DISPAROS: Limite diário atingido durante o envio do lote para {usuario.username}.")
                     break
 
