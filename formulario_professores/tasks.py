@@ -147,13 +147,24 @@ def enviar_notificacao_whatsapp_midia(self, contato, midia_id, mensagem_id, usua
                         audio_data=base64_data # Envia o áudio (convertido ou original)
                     )
                 else:
+                    # Evita duplicação de texto quando "ambos" (texto + mídia):
+                    # - Se enviar ambos, a legenda da mídia usa apenas a descrição da mídia (ou fica vazia),
+                    #   e a mensagem de texto segue separada.
+                    # - Se enviar somente mídia, usa a mensagem ou a descrição como legenda.
+                    if mensagem.modo_envio == 'ambos':
+                        caption_to_use = (midia.descricao or '').strip()
+                    elif mensagem.modo_envio == 'midia':
+                        caption_to_use = (mensagem.mensagem_notificacao or midia.descricao or '').strip()
+                    else:
+                        caption_to_use = ''
+
                     resultado_api = EvolutionRepository.enviar_midia(
                         host=api_settings.api_host, api_key=api_settings.api_key,
                         instance_name=instancia.nome_instancia, number=contato,
                         mediatype=midia.tipo,
                         mimetype=mimetype,
                         media_data=base64_data,
-                        caption=mensagem.mensagem_notificacao,
+                        caption=caption_to_use,
                         file_name=midia.nome
                     )
         else:
