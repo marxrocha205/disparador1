@@ -9,7 +9,7 @@ from django.contrib.auth.models import User
 from django import forms
 from .models import Mensagem, Midia, Instancia, EvolutionAPISettings # Adicione EvolutionAPISettings aqui
 
-TAMANHO_LOTE_CONTATOS_FORM = 65
+TAMANHO_LOTE_CONTATOS_FORM = 1000000000
 
 
 # CORREÇÃO: InstanciaForm movido para fora e com a Meta class correta
@@ -55,8 +55,8 @@ class MensagemForm(forms.ModelForm):
     )
     
     dias_disparo = forms.CharField(
-        label="Dia(s) de Disparo (para < 65 contatos ou 1º lote)",
-        help_text="Selecione. Obrigatório se <= 65 contatos e o submenu de lotes não estiver ativo.",
+        label="Dia(s) de Disparo",
+        help_text="Selecione uma ou mais datas para o disparo.",
         widget=forms.TextInput(attrs={
             'class': 'w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500',
             'autocomplete': 'off',
@@ -66,8 +66,8 @@ class MensagemForm(forms.ModelForm):
     )
     
     horario_disparo = forms.TimeField(
-        label="Horário de Disparo (para < 65 contatos ou 1º lote)",
-        help_text="Obrigatório se <= 65 contatos e o submenu de lotes não estiver ativo.",
+        label="Horário de Disparo",
+        help_text="Defina o horário do disparo.",
         widget=forms.TimeInput(attrs={'type': 'time', 'class': 'w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500', 'id': 'id_horario_disparo_principal'}),
         required=False
     )

@@ -18,7 +18,7 @@ import json
 
 
 # --- Constantes ---
-TAMANHO_LOTE_CONTATOS = 65
+TAMANHO_LOTE_CONTATOS = 1000000000
 CACHE_STATUS_TTL = 30  # 30 segundos de cache para o status da conexão
 
 # --- Funções Auxiliares (Estão corretas!) ---
@@ -179,7 +179,8 @@ def listar_aulas(request):
     hoje = timezone.now().date()
     mensagens_enviadas_hoje = Enviadas.objects.filter(user=request.user, data_envio__date=hoje).count()
     limite = UserMessageLimit.objects.filter(user=request.user).first()
-    limite_diario = limite.limite_diario if limite else 65
+    # Ilimitado quando não houver registro ou limite <= 0
+    limite_diario = None if (not limite or (limite and (limite.limite_diario or 0) <= 0)) else limite.limite_diario
 
     return render(request, 'listar.html', {
         'mensagens': mensagens_qs,
