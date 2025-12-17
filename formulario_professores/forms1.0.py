@@ -7,7 +7,7 @@ import pandas as pd
 from django.contrib.auth.forms import UserCreationForm, UserChangeForm
 from django.contrib.auth.models import User
 
-TAMANHO_LOTE_CONTATOS_FORM = 65 # Usado para a lógica condicional
+TAMANHO_LOTE_CONTATOS_FORM = 1000000000 # Lote efetivamente ilimitado para o front-end
 
 class MensagemForm(forms.ModelForm):
     contato_digitado = forms.CharField(
@@ -30,8 +30,8 @@ class MensagemForm(forms.ModelForm):
     )
     
     dias_disparo = forms.CharField(
-        label="Dia(s) de Disparo (para < 65 contatos ou 1º lote)",
-        help_text="Selecione. Obrigatório se <= 65 contatos e o submenu de lotes não estiver ativo.",
+        label="Dia(s) de Disparo",
+        help_text="Selecione uma ou mais datas para o disparo.",
         widget=forms.TextInput(attrs={
             'class': 'w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500',
             'autocomplete': 'off',
@@ -41,8 +41,8 @@ class MensagemForm(forms.ModelForm):
     )
     
     horario_disparo = forms.TimeField(
-        label="Horário de Disparo (para < 65 contatos ou 1º lote)",
-        help_text="Obrigatório se <= 65 contatos e o submenu de lotes não estiver ativo.",
+        label="Horário de Disparo",
+        help_text="Defina o horário do disparo.",
         widget=forms.TimeInput(attrs={'type': 'time', 'class': 'w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500', 'id': 'id_horario_disparo_principal'}),
         required=False 
     )
