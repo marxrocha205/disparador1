@@ -106,8 +106,20 @@ class EvolutionRepository:
         if not normalized:
             logger.warning(f"sendText ignorado: texto vazio para {number}.")
             return {"status": "error", "message": "Texto vazio não enviado."}
-        payload = {"number": number, "text": normalized}
-        return EvolutionRepository._make_request("POST", host, api_key, f"message/sendText/{instance_name}", json=payload)
+        safe_text = normalized[:3900]  # evita edge case > 4096
+
+        payload = {
+            "number": number,
+            "text": safe_text
+        }
+
+        return EvolutionRepository._make_request(
+            "POST",
+            host,
+            api_key,
+            f"message/sendText/{instance_name}",
+            json=payload
+        )
 
   
     @staticmethod
