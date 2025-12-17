@@ -36,6 +36,37 @@ class EvolutionRepository:
             logger.error(f"Erro de conexão com '{url}': {req_err}")
             return {"status": "error", "message": "Erro de conexão com a API."}
 
+    @staticmethod
+    def _normalize_text(text: Any) -> str:
+        """Normaliza texto para envio ao WhatsApp via Baileys.
+
+        - Converte para string
+        - Converte CRLF (Windows) para LF\n
+        - Remove caracteres invisíveis problemáticos (zero-width)
+        - Remove caracteres de controle não imprimíveis
+        - Trima espaços no início/fim
+        """
+        try:
+            s = str(text) if text is not None else ""
+        except Exception:
+            s = ""
+
+        # Normaliza quebras de linha
+        s = s.replace("\r\n", "\n").replace("\r", "\n")
+
+        # Remove zero-width chars comuns
+        zero_width = ["\u200b", "\u200c", "\u200d", "\u2060", "\ufeff"]
+        for zw in zero_width:
+            s = s.replace(zw, "")
+
+        # Remove caracteres de controle (exceto \n e \t)
+        s = "".join(ch for ch in s if (ch == "\n" or ch == "\t" or (ord(ch) >= 32)))
+
+        # Limpa espaços excessivos nas bordas
+        s = s.strip()
+
+        return s
+
     # --- Métodos de Gerenciamento da Instância ---
     def criar_instancia(host: str, api_key: str, instance_name: str) -> Dict[str, Any]:
         """Cria uma nova instância ou obtém o status de uma existente."""
@@ -71,7 +102,11 @@ class EvolutionRepository:
     @staticmethod
     def enviar_mensagem_texto(host: str, api_key: str, instance_name: str, number: str, text: str) -> Dict[str, Any]:
         """Envia uma mensagem de texto simples."""
-        payload = {"number": number, "text": text}
+        normalized = EvolutionRepository._normalize_text(text)
+        if not normalized:
+            logger.warning(f"sendText ignorado: texto vazio para {number}.")
+            return {"status": "error", "message": "Texto vazio não enviado."}
+        payload = {"number": number, "text": normalized}
         return EvolutionRepository._make_request("POST", host, api_key, f"message/sendText/{instance_name}", json=payload)
 
   
@@ -106,14 +141,19 @@ class EvolutionRepository:
         O WhatsApp detecta automaticamente URLs e as torna clicáveis.
         """
         # Formata a mensagem com link clicável e emojis para destaque visual
-        mensagem_formatada = f"""📩 *Mensagem Importante*
+        mensagem_base = f"""📩 *Mensagem Importante*
 
-{text}
+    {text}
 
-🔗 *{button_text}*
-👉 {button_url}
+    🔗 *{button_text}*
+    👉 {button_url}
 
-_Clique no link acima para acessar_"""
+    _Clique no link acima para acessar_"""
+
+        mensagem_formatada = EvolutionRepository._normalize_text(mensagem_base)
+        if not mensagem_formatada:
+            logger.warning(f"sendText (botão) ignorado: texto vazio para {number}.")
+            return {"status": "error", "message": "Texto vazio não enviado (botão)."}
         
         # Usa o endpoint de texto simples que funciona 100% no Baileys
         payload = {"number": number, "text": mensagem_formatada}
