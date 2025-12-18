@@ -159,6 +159,21 @@ class MensagemForm(forms.ModelForm):
         if 10 <= len(apenas_digitos_internos) <= 11: return f"+55{apenas_digitos_internos}"
         return None
 
+    def _extract_candidate_numbers(self, text):
+        """Extrai sequências de dígitos/"+" de tamanho plausível de qualquer texto.
+
+        Aceita números separados por vírgula, ponto e vírgula, espaços, quebras de linha,
+        ou embutidos em frases. Retorna lista de strings encontradas.
+        """
+        if not text:
+            return []
+        s = str(text)
+        # Normaliza quebras e separadores comuns
+        s = s.replace('\r\n', '\n').replace('\r', '\n')
+        # Encontra sequências com 10 a 15 dígitos (com opcional '+')
+        matches = re.findall(r"\+?\d{10,15}", s)
+        return matches
+
     def clean_dias_disparo(self): 
         datas_raw = self.cleaned_data.get('dias_disparo', '').strip()
         if not datas_raw:
@@ -190,7 +205,8 @@ class MensagemForm(forms.ModelForm):
         erro_no_processamento_do_ficheiro = False
 
         if contatos_digitados_str:
-            numeros_crus_combinados.extend([c.strip() for c in contatos_digitados_str.split(',') if c.strip()])
+            # Extrai números de qualquer separador/linha
+            numeros_crus_combinados.extend(self._extract_candidate_numbers(contatos_digitados_str))
 
         if arquivo_contatos:
             try:
@@ -203,10 +219,14 @@ class MensagemForm(forms.ModelForm):
                 else: self.add_error('contacts_file', "Formato de arquivo não suportado."); erro_no_processamento_do_ficheiro = True
                 
                 if df is not None and not df.empty:
-                    numeros_potenciais_arquivo = df.iloc[:, 0].astype(str).str.strip().dropna().tolist()
-                    for num_str in numeros_potenciais_arquivo:
-                        if num_str and num_str.lower() not in ['nan', 'none', '']:
-                            numeros_crus_combinados.append(num_str)
+                    # Varre TODAS as colunas e extrai números de cada célula
+                    df = df.astype(str)
+                    for valor in df.values.flatten().tolist():
+                        if not valor:
+                            continue
+                        v = valor.strip()
+                        if v and v.lower() not in ['nan', 'none', '']:
+                            numeros_crus_combinados.extend(self._extract_candidate_numbers(v))
                 elif df is not None and df.empty: self.add_error('contacts_file', "Arquivo vazio ou sem dados."); erro_no_processamento_do_ficheiro = True
             except Exception as e: self.add_error('contacts_file', f"Erro ao processar o arquivo: {e}"); erro_no_processamento_do_ficheiro = True
         
