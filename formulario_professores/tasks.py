@@ -270,7 +270,13 @@ def verificar_disparos(self):
 
                 if enviou_algo:
                     Enviadas.objects.create(user=usuario, texto=f"Agend.: {msg.id} - Contato: {contato}")
-                    delay += msg.intervalo_disparo
+                    try:
+                        intervalo_max = int(msg.intervalo_disparo or 0)
+                        if intervalo_max < 0:
+                            intervalo_max = 0
+                    except Exception:
+                        intervalo_max = 0
+                    delay += random.randint(0, intervalo_max)
 
     finally:
         if lock_adquirido:
